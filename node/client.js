@@ -1,4 +1,6 @@
 const net = require('net')
+const parserFun = require('./parser.js')
+
 class Request {
   constructor(options) {
     this.method = options.method || 'GET'
@@ -48,7 +50,6 @@ class Request {
           if (parser.isFinished) {
             resolve(parser.response)
           }
-          console.log(parser.statusLine)
           connection.end()
         })
         connection.on('error', (error) => {
@@ -84,7 +85,6 @@ class ResponseParser {
     return this.bodyParser && this.bodyParser.isFinished
   }
   get response() {
-    console.log('>>>', this.statusLine)
     this.statusLine.match(/HTTP\/1.1 ([0-9]+) ([\s\S]+)/)
     return {
       statusCode: RegExp.$1,
@@ -101,7 +101,6 @@ class ResponseParser {
 
   receiveChar(char) {
     if (this.current === this.WAITING_STATUS_LINE) {
-      console.log(char.charCodeAt(0))
       // 通过\r或\n去查看每行的变化
       if (char === '\r') {
         this.current = this.WAITING_STATUS_LINE_END
@@ -216,7 +215,7 @@ class TrunkedBodyParser {
   try {
     let response = await request.send()
     console.log(response)
-  } catch (e) {
-    console.log(e)
-  }
+    parserFun.parserHTMl(response.body)
+    // console.log(response)
+  } catch (e) {}
 })()
