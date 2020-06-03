@@ -40,6 +40,8 @@ function match(element, selector) {
   return false
 }
 
+// 当内敛的样式存在是p0等于1
+
 function specificity(selector) {
   var p = [0, 0, 0, 0]
   var selectorParts = selector.split(' ')
