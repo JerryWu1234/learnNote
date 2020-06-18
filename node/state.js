@@ -1,61 +1,61 @@
 //--作业：状态机查找string中的abababx
 function match(string) {
-  let state = start
+  let state = start;
   for (let i of string) {
-    state = state(i)
+    state = state(i);
   }
-  return state === end
+  return state === end;
 }
 function start(c) {
   if (c == 'a') {
-    return foundA
+    return foundA;
   } else {
-    return start
+    return start;
   }
 }
 
 function end(c) {
-  return end
+  return end;
 }
 function foundA(c) {
   if (c === 'b') {
-    return foundB
+    return foundB;
   } else {
-    return start(c)
+    return start(c);
   }
 }
 function foundB(c) {
   if (c === 'a') {
-    return foundA2
+    return foundA2;
   } else {
-    return start(c)
+    return start(c);
   }
 }
 function foundA2(c) {
   if (c === 'b') {
-    return foundB2
+    return foundB2;
   } else {
-    return start(c)
+    return start(c);
   }
 }
 function foundB2(c) {
   if (c === 'a') {
-    return foundA3
+    return foundA3;
   } else {
-    return start(c)
+    return start(c);
   }
 }
 function foundA3(c) {
   if (c === 'b') {
-    return foundB3
+    return foundB3;
   } else {
-    return start(c)
+    return start(c);
   }
 }
 function foundB3(c) {
   if (c === 'x') {
-    return end
+    return end;
   } else {
-    return foundB2(c)
+    return foundB2(c);
   }
 }
