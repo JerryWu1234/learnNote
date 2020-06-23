@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    .lights {
+      display: flex;
+      height: 300px;
+      justify-content: center;
+    }
+    .red {
+      height: 100%;
+      width: 100%;
+      border-radius: 100%;
+      background: white;
+      flex: 1;
+    }
+    .yellow {
+      height: 100%;
+      width: 100%;
+      border-radius: 100%;
+      background: white;
+      flex: 1;
+      margin-left: 50px;
+    }
+    .green {
+      height: 100%;
+      width: 100%;
+      border-radius: 100%;
+      background: white;
+      flex: 1;
+      margin-left: 50px;
+    }
+  </style>
+  <body>
+    <div class="lights">
+      <span class="red"></span>
+      <span class="yellow"></span>
+      <span class="green"></span>
+    </div>
+  </body>
+  <script>
+    function sleep(time) {
+      return new Promise((res) => {
+        setTimeout(res, time);
+      });
+    }
+    async function light(color, time) {
+      changeDom(color);
+      return await sleep(time);
+    }
+
+    function changeDom(red) {
+      let p = document.querySelector('.lights');
+      for (let i = 0; i < p.children.length; i++) {
+        p.children[i].style.backgroundColor = 'white';
+      }
+      let d = document.querySelector(`.${red}`);
+      d.style.backgroundColor = red;
+    }
+    async function excute() {
+      while (true) {
+        await light('red', 5000);
+        await light('yellow', 2000);
+        await light('green', 1000);
+      }
+    }
+    // excute();
+
+    function* go() {
+      while (true) {
+        yield light('red', 5000);
+        yield light('yellow', 5000);
+        yield light('yellow', 5000);
+      }
+    }
+    function co(iterator) {
+      let { value, done } = iterator.next();
+      if (done) return;
+      if (value instanceof Promise) {
+        value.then(() => co(iterator));
+      }
+    }
+    co(go());
+  </script>
+</html>
