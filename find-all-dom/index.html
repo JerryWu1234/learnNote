@@ -13,9 +13,7 @@
   />
   <script src="https://cdn.jsdelivr.net/gh/alyssaxuu/flowy/flowy.min.js"></script>
   <script>
-    创建 shadow DOM
-
-    var set = new Set()
+    var set = new Set();
     var objects = [
       'eval',
       'isFinite',
@@ -64,22 +62,22 @@
       'JSON',
       'Math',
       'Reflect',
-    ]
-    let queue = []
+    ];
+    let queue = [];
 
     for (let key of objects) {
       queue.push({
         path: [key],
         objects: window[key],
-      })
+      });
     }
     while (queue.length) {
-      let v = queue.shift()
-      if (set.has(v.objects)) continue
-      set.add(v.objects)
+      let v = queue.shift();
+      if (set.has(v.objects)) continue;
+      set.add(v.objects);
 
       for (let key of Object.getOwnPropertyNames(v.objects)) {
-        let ov = Object.getOwnPropertyDescriptor(v.objects, key)
+        let ov = Object.getOwnPropertyDescriptor(v.objects, key);
         if (
           (ov.value !== null && typeof ov.value === 'object') ||
           (typeof ov.value === 'object' && ov.value instanceof Object)
@@ -87,19 +85,19 @@
           queue.push({
             path: v.path.concat([key]),
             objects: ov.value,
-          })
+          });
         }
         if (ov.set && typeof ov.set === 'function') {
           queue.push({
             path: v.path.concat([key]),
             objects: ov.set,
-          })
+          });
         }
         if (ov.get && typeof ov.get === 'function') {
           queue.push({
             path: v.path.concat([key]),
             objects: ov.get,
-          })
+          });
         }
       }
     }

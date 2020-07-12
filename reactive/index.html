@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+  <script>
+    let map = new Map();
+    let handleList = [];
+    function reactive(obj) {
+      return new Proxy(obj, {
+        get(target, propKey, receiver) {
+          handleList.push([target, propKey]);
+          return target[propKey];
+        },
+        set(target, propKey, value, receiver) {
+          target[propKey] = value;
+          let list = map.get(target)[propKey];
+          for (let i of list) {
+            i();
+          }
+        },
+      });
+    }
+    function effect(handle) {
+      handleList = [];
+      handle();
+      for (let [target, key] of handleList) {
+        if (!map.has(target)) {
+          map.set(target, {});
+        }
+        if (!map.get(target)[key]) {
+          map.get(target)[key] = [];
+        }
+        map.get(target)[key].push(handle);
+      }
+    }
+    let dummy = '';
+    let example = { a: 1 };
+    let proxy = reactive(example);
+    effect(() => (dummy = proxy.a));
+    console.log(dummy);
+    proxy.a = 2;
+    console.log(dummy);
+  </script>
+</html>
