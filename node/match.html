@@ -55,17 +55,17 @@
         'body div:not(.ddd)',
         'a.link[href$="com"]',
         'body div.aaa + div ~ div a#w1234[href^=https]:not(.link)',
-      ]
+      ];
       selectors.forEach((selector) => {
-        const elements = [...document.querySelectorAll(selector)]
+        const elements = [...document.querySelectorAll(selector)];
         console.log(
           [
             `Selector: "${selector}"`,
             `Elements: ${elements.length}`,
             `Result: ${elements.every((el) => match(selector, el))}`,
           ].join('\n')
-        )
-      })
+        );
+      });
     </script>
   </body>
 </html>

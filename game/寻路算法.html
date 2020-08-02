@@ -4,224 +4,212 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+
     <style>
       .cell {
-        width: 8px;
-        height: 8px;
-        border: 1px solid white;
-        float: left;
-        background: #000;
+        width: 6px;
+        height: 6px;
+        border-right: 1px solid white;
+        border-bottom: 1px solid white;
+        background-color: #ddd;
       }
-      .cell_color {
-        background: red;
+
+      #container {
+        display: flex;
+        width: 700px;
+        flex-wrap: wrap;
       }
-      .bodyClass {
-        width: 1000px;
-        height: 1000px;
-      }
-      .search {
-        background-color: greenyellow;
-      }
-      .pink {
-        background-color: pink;
+
+      button {
+        margin-top: 10px;
       }
     </style>
-  </head>
-  <body>
-    <button onclick="localStorage.app = JSON.stringify(app)">save</button>
-    <div class="bodyClass"></div>
-  </body>
 
-  <script>
-    class BinaryHeap {
-      constructor(data, compare) {
-        this.data = data;
-        this.compare = compare;
+    <div id="container"></div>
+    <button onclick="localStorage.map = JSON.stringify(map);">save</button>
+    <button onclick="delete localStorage.map;location.reload();">clear</button>
+    <button onclick="findPath(map, start, end);">GO!!!</button>
+
+    <script>
+      const map = localStorage.map
+        ? JSON.parse(localStorage.map)
+        : new Array(10000).fill(0);
+      const start = [0, 0];
+      const end = [99, 99];
+      const container = document.getElementById("container");
+      function show(map) {
+        let move = false;
+        let clear = false;
+
+        container.addEventListener("mousedown", (e) => {
+          move = true;
+          clear = e.button === 2; // 鼠标右键
+        });
+
+        container.addEventListener("mouseup", (e) => {
+          move = false;
+        });
+
+        // 取消浏览器右键弹出菜单
+        container.addEventListener("contextmenu", (e) => e.preventDefault());
+
+        for (let y = 0; y < 100; y++) {
+          for (let x = 0; x < 100; x++) {
+            let cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.addEventListener("mousemove", () => {
+              if (move) {
+                if (clear) {
+                  cell.style.backgroundColor = "";
+                  map[y * 100 + x] = 0;
+                } else {
+                  cell.style.backgroundColor = "black";
+                  map[y * 100 + x] = 1;
+                }
+              }
+            });
+
+            container.appendChild(cell);
+
+            if (map[y * 100 + x] === 1) {
+              cell.style.backgroundColor = "black";
+            }
+
+            if (x === start[0] && y === start[1]) {
+              cell.style.backgroundColor = "yellow";
+            }
+            if (x === end[0] && y === end[1]) {
+              cell.style.backgroundColor = "red";
+            }
+          }
+        }
       }
-      take() {
-        if (!this.data.length) return;
-        let min = this.data[0];
-        let i = 0;
+      show(map);
 
-        while (i < this.data.length) {
-          if (i * 2 + 1 >= this.data.length) break;
-          if (i * 2 + 2 >= this.data.length) {
-            this.data[i] = this.data[i * 2 + 1];
-            i = i * 2 + 1;
-            break;
+      async function findPath(map, start, end) {
+        let _map = map.slice();
+        let collection = new BinaryHeap(
+          [start],
+          (a, b) => distance(a) - distance(b)
+        );
+
+        // 记录到起点的长度
+        let table = new Array(10000).fill(Infinity);
+        table[start[1] * 100 + start[0]] = 0;
+
+        while (collection.length) {
+          let [x, y] = collection.take();
+          let fromStart = table[y * 100 + x];
+          if (x === end[0] && y === end[1]) {
+            let path = [];
+            while (x !== start[0] || y !== start[1]) {
+              path.push([x, y]);
+              container.children[y * 100 + x].style.backgroundColor = "pink";
+              [x, y] = _map[y * 100 + x];
+            }
+            return path;
           }
 
-          if (this.compare(this.data[i * 2 + 1], this.data[i * 2 + 2]) < 0) {
-            this.data[i] = this.data[i * 2 + 1];
-            i = i * 2 + 1;
+          await insert([x - 1, y], [x, y], fromStart + 1); // 左
+          await insert([x + 1, y], [x, y], fromStart + 1); // 右
+          await insert([x, y - 1], [x, y], fromStart + 1); // 上
+          await insert([x, y + 1], [x, y], fromStart + 1); // 下
+
+          (map[y * 100 + (x - 1)] === 0 || map[(y - 1) * 100 + x] === 0) &&
+            (await insert([x - 1, y - 1], [x, y], fromStart + 1.4)); // 左下
+          (map[y * 100 + (x - 1)] === 0 || map[(y + 1) * 100 + x] === 0) &&
+            (await insert([x - 1, y + 1], [x, y], fromStart + 1.4)); // 左上
+          (map[y * 100 + (x + 1)] === 0 || map[(y - 1) * 100 + x] === 0) &&
+            (await insert([x + 1, y - 1], [x, y], fromStart + 1.4)); // 右下
+          (map[y * 100 + (x + 1)] === 0 || map[(y + 1) * 100 + x] === 0) &&
+            (await insert([x + 1, y + 1], [x, y], fromStart + 1.4)); // 右上
+        }
+        return null;
+
+        async function insert([x, y], pre, fromStart) {
+          if (_map[y * 100 + x] === 1) return;
+
+          if (x < 0 || y < 0 || x >= 100 || y >= 100) return;
+
+          if (fromStart >= table[y * 100 + x]) return;
+
+          _map[y * 100 + x] = pre;
+          table[y * 100 + x] = fromStart;
+          container.children[y * 100 + x].style.backgroundColor = "lightgreen";
+          await sleep(1);
+          collection.insert([x, y]);
+        }
+
+        function distance([x, y]) {
+          return (x - end[0]) ** 2 + (y - end[1]) ** 2;
+        }
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve, reject) => {
+          setTimeout(resolve, ms);
+        });
+      }
+
+      class BinaryHeap {
+        constructor(data, compare) {
+          this.data = data;
+          this.compare = compare;
+        }
+
+        take() {
+          if (this.data.length === 0) return;
+
+          let min = this.data[0];
+          let i = 0;
+          // fix heap
+          while (i < this.data.length) {
+            // 没有左子节点
+            if (i * 2 + 1 >= this.data.length) break;
+            // 没有右子节点
+            if (i * 2 + 2 >= this.data.length) {
+              this.data[i] = this.data[i * 2 + 1];
+              i = i * 2 + 1;
+              break;
+            }
+            // 比较左右子节点的大小，更小的补到父节点
+            if (this.compare(this.data[i * 2 + 1], this.data[i * 2 + 2]) < 0) {
+              this.data[i] = this.data[i * 2 + 1];
+              i = i * 2 + 1;
+            } else {
+              this.data[i] = this.data[i * 2 + 2];
+              i = i * 2 + 2;
+            }
+          }
+          if (i < this.data.length - 1) {
+            this.insertAt(i, this.data.pop());
           } else {
-            this.data[i] = this.data[i * 2 + 2];
-            i = i * 2 + 2;
+            this.data.pop();
+          }
+          return min;
+        }
+
+        insertAt(i, v) {
+          this.data[i] = v;
+          // 对比当前节点与其子节点，如果子节点更小就交换它们
+          while (
+            i > 0 &&
+            this.compare(v, this.data[Math.floor((i - 1) / 2)]) < 0
+          ) {
+            this.data[i] = this.data[Math.floor((i - 1) / 2)];
+            this.data[Math.floor((i - 1) / 2)] = v;
+            i = Math.floor((i - 1) / 2);
           }
         }
-        if (i < this.data.length - 1) this.insertAt(i, this.data.pop());
-        else this.data.pop();
 
-        return min;
-      }
-      insertAt(i, v) {
-        this.data[i] = v;
-        while (this.compare(v, this.data[Math.floor((i - 1) / 2)]) < 0) {
-          this.data[i] = this.data[Math.floor((i - 1) / 2)];
-          this.data[Math.floor((i - 1) / 2)] = v;
-          i = Math.floor((i - 1) / 2);
-        }
-      }
-      insert(v) {
-        this.insertAt(this.data.length, v);
-      }
-      get length() {
-        return this.data.length;
-      }
-    }
-
-    let mmm = new BinaryHeap([], (a, b) => b - a);
-
-    let state = false,
-      leftButton = false;
-
-    const p = document.querySelector('.bodyClass');
-    const app = localStorage.map
-      ? JSON.parse(localStorage.map)
-      : new Array(10000).fill(0);
-    let a = document.createDocumentFragment();
-    for (let i = 0; i < 100; i++) {
-      for (let k = 0; k < 100; k++) {
-        let c = document.createElement('div');
-        c.addEventListener('mousemove', (event) => move(i, k));
-        c.classList.add('cell');
-        a.appendChild(c);
-      }
-    }
-    p.appendChild(a);
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-    });
-    document.addEventListener('mousedown', (e) => {
-      if (e.button === 2) {
-        leftButton = true;
-      } else {
-        state = true;
-      }
-    });
-    document.addEventListener('mouseup', (e) => {
-      if (e.button === 2) {
-        leftButton = false;
-      } else {
-        state = false;
-      }
-    });
-    function move(i, k) {
-      if (state) {
-        console.log('y', i, 'x', k);
-        p.children[i * 100 + k].classList.add('cell_color');
-        app[i * 100 + k] = 1;
-      }
-      if (leftButton) {
-        p.children[i * 100 + k].classList.remove('cell_color');
-        app[i * 100 + k] = 0;
-      }
-    }
-
-    function sleep(t) {
-      return new Promise((res) => {
-        setTimeout(res, t);
-      });
-    }
-
-    class Sorted {
-      constructor(data, compare) {
-        this.data = data;
-        this.compare = compare;
-      }
-      take() {
-        if (!this.data.length) return;
-        let min = this.data[0];
-        let index = 0;
-        for (let i = 0; i < this.data.length; i++) {
-          if (this.compare(this.data[i], min) > 0) {
-            min = this.data[i];
-            index = i;
-          }
-        }
-        this.data[index] = this.data[this.data.length - 1];
-        this.data.pop();
-        return min;
-      }
-      insert(v) {
-        this.data.push(v);
-      }
-      dataLength() {
-        return this.data.length;
-      }
-    }
-
-    async function findPath(map, start, end) {
-      let _map = map.slice();
-      // let queue = [start];
-      function distance([y, x]) {
-        return (y - end[0]) ** 2 + (x - end[1]) ** 2;
-      }
-      let sorted = new Sorted([start], (a, b) => distance(b) - distance(a));
-      async function insert(y, x, pre) {
-        if (_map[y * 100 + x] !== 0) {
-          return;
-        }
-        if (y < 0 || x < 0 || y >= 100 || x >= 100) return;
-        _map[100 * y + x] = pre;
-        p.children[100 * y + x].classList.add('search');
-        await sleep(5);
-
-        sorted.insert([y, x]);
-      }
-      // map = map.slice();
-
-      while (sorted.dataLength()) {
-        let [y, x] = sorted.take();
-        if (y === end[0] && x === end[1]) {
-          let path = [];
-          while (y !== start[0] || x !== start[1]) {
-            path.push([y, x]);
-            p.children[y * 100 + x].classList.add('pink');
-            await sleep(5);
-            [y, x] = _map[y * 100 + x];
-          }
-          return path;
-        }
-        await insert(y, x - 1, [y, x]);
-        await insert(y, x + 1, [y, x]);
-        await insert(y - 1, x, [y, x]);
-        await insert(y + 1, x, [y, x]);
-
-        // await insert(y + 1, x - 1, [y, x]);
-        // await insert(y - 1, x - 1, [y, x]);
-        // await insert(y - 1, x + 1, [y, x]);
-        // await insert(y + 1, x + 1, [y, x]);
-        // 右上
-        if (map[y * 100 + x + 1] !== 1 || map[(y + 1) * 100 + x] !== 1) {
-          await insert([y + 1, x + 1], [y, x]);
+        insert(v) {
+          this.insertAt(this.data.length, v);
         }
 
-        // 右下
-        if (map[y * 100 + x + 1] !== 1 || map[(y - 1) * 100 + x] !== 1) {
-          await insert([y + 1, x - 1], [y, x]);
-        }
-
-        // 左上
-        if (map[y * 100 + x - 1] !== 1 || map[(y + 1) * 100 + x] !== 1) {
-          await insert([y - 1, x + 1], [y, x]);
-        }
-
-        // 左下
-        if (map[y * 100 + x - 1] !== 1 || map[(y - 1) * 100 + x] !== 1) {
-          await insert([y - 1, x - 1], [y, x]);
+        get length() {
+          return this.data.length;
         }
       }
-    }
-  </script>
+    </script>
+  </head>
 </html>
